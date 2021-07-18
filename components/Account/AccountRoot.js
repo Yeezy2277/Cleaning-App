@@ -9,6 +9,9 @@ import MyTabBar from "../Common/MyTab";
 import {LinearGradient} from "expo-linear-gradient";
 import {Dimensions, View} from "react-native";
 import CalculateRoot from "./Calculate";
+import AddressesRoot from "./Addresses";
+import SupportRoot from "./Support";
+import AccountContainer from "./Account";
 
 const height = Dimensions.get("screen").height;
 
@@ -31,9 +34,9 @@ const AccountRoot = () => {
             );
         }}>
             <Tab.Screen name="Расчет" component={CalculateRoot}/>
-            <Tab.Screen name="Адреса" component={Addresses}/>
-            <Tab.Screen name="Помощь" component={Support}/>
-            <Tab.Screen name="Аккаунт" component={Account}/>
+            <Tab.Screen name="Адреса" component={AddressesRoot}/>
+            <Tab.Screen name="Помощь" component={SupportRoot}/>
+            <Tab.Screen name="Аккаунт" component={AccountContainer}/>
         </Tab.Navigator>
     );
 };
