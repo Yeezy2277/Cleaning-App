@@ -19,6 +19,8 @@ import ModalPicker from "../LittleComponents/ModalPicker";
 import NumberPicker from "../LittleComponents/NumberPicker";
 import MyInput from "../LittleComponents/MyInput";
 import MapView from "react-native-maps";
+import Svg, {Defs, Path} from "react-native-svg";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const width = Dimensions.get("screen").width;
 
@@ -60,6 +62,34 @@ const CalculateRoot = () => {
 
 const Calculate = () => {
     const [value, setValue] = useState(12);
+    const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+    const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
+
+    const [dateValue, setDateValue] = useState("1999-01-01");
+    const [timeValue, setTimeValue] = useState("16:00");
+
+    const showDatePicker = () => {
+        setDatePickerVisibility(true);
+    };
+    const showTimePicker = () => {
+        setTimePickerVisibility(true);
+    };
+
+    const hideDatePicker = () => {
+        setDatePickerVisibility(false);
+    };
+    const hideTimePicker = () => {
+        setTimePickerVisibility(false);
+    };
+
+    const handleConfirmDate = (date) => {
+        setDateValue(`${date.getFullYear()}-${date.getMonth()}-${date.getDay()}`)
+        hideDatePicker();
+    };
+    const handleConfirmTime = (time) => {
+        setTimeValue(`${time.getHours()}:${time.getMinutes()}`)
+        hideTimePicker();
+    };
     return (
         <FlatList showsVerticalScrollIndicator={false} data={["1"]} renderItem={({item}) => (
             <SafeAreaView style={styles.container}>
@@ -105,6 +135,47 @@ const Calculate = () => {
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }} />
+                <Text style={[styles.text, {marginTop: width * 0.09}]}>Дата и время уборки</Text>
+                <View style={styles.dateTime}>
+                    <View style={[styles.input, {width: width * 0.4, justifyContent: "space-between"}]}>
+                        <Text>{dateValue}</Text>
+                        <TouchableOpacity onPress={showDatePicker}>
+                            <Svg xmlns="http://www.w3.org/2000/svg" height={width * 0.08} width={width * 0.08} viewBox="0 0 512 512">
+                                <Defs/>
+                                <Path fill="#313130" d="M452 40h-24V0h-40v40H124V0H84v40H60C26.916 40 0 66.916 0 100v352c0 33.084 26.916 60 60 60h392c33.084 0 60-26.916 60-60V100c0-33.084-26.916-60-60-60zm20 412c0 11.028-8.972 20-20 20H60c-11.028 0-20-8.972-20-20V188h432v264zm0-304H40v-48c0-11.028 8.972-20 20-20h24v40h40V80h264v40h40V80h24c11.028 0 20 8.972 20 20v48z"/>
+                                <Path fill="#313130" d="M76 230h40v40H76zM156 230h40v40h-40zM236 230h40v40h-40zM316 230h40v40h-40zM396 230h40v40h-40zM76 310h40v40H76zM156 310h40v40h-40zM236 310h40v40h-40zM316 310h40v40h-40zM76 390h40v40H76zM156 390h40v40h-40zM236 390h40v40h-40zM316 390h40v40h-40zM396 310h40v40h-40z"/>
+                            </Svg>
+                        </TouchableOpacity>
+                        <DateTimePickerModal
+                            isVisible={isDatePickerVisible}
+                            mode="date"
+                            onConfirm={handleConfirmDate}
+                            onCancel={hideDatePicker}
+                        />
+                    </View>
+                    <View style={[styles.input, {width: width * 0.4, justifyContent: "space-between", marginLeft: width * 0.05}]}>
+                        <Text>{timeValue}</Text>
+                        <TouchableOpacity onPress={showTimePicker}>
+                            <Svg xmlns="http://www.w3.org/2000/svg"  height={width * 0.08} width={width * 0.08} viewBox="0 0 512 512">
+                                <Defs/>
+                                <Path fill="#313130"
+                                      d="M347.216 301.211l-71.387-53.54V138.609c0-10.966-8.864-19.83-19.83-19.83-10.966 0-19.83 8.864-19.83 19.83v118.978c0 6.246 2.935 12.136 7.932 15.864l79.318 59.489a19.713 19.713 0 0011.878 3.966c6.048 0 11.997-2.717 15.884-7.952 6.585-8.746 4.8-21.179-3.965-27.743z"/>
+                                <Path fill="#313130"
+                                      d="M256 0C114.833 0 0 114.833 0 256s114.833 256 256 256 256-114.833 256-256S397.167 0 256 0zm0 472.341c-119.275 0-216.341-97.066-216.341-216.341S136.725 39.659 256 39.659c119.295 0 216.341 97.066 216.341 216.341S375.275 472.341 256 472.341z"/>
+                            </Svg>
+                        </TouchableOpacity>
+                        <DateTimePickerModal
+                            isVisible={isTimePickerVisible}
+                            mode="time"
+                            onConfirm={handleConfirmTime}
+                            onCancel={hideTimePicker}
+                        />
+                    </View>
+                </View>
+                <Text style={[styles.calcText, {fontSize: width * 0.06, marginTop: width * 0.04}]}>Итого:  руб.</Text>
+                <Text style={styles.calcText}>Стоимость уборки:  руб.</Text>
+                <Text style={styles.calcText}>Стоимость дороги:  руб.</Text>
+                <Text style={styles.calcText}>Бонусных рублей начислим:  руб.</Text>
             </SafeAreaView>
         )}/>
     )
@@ -131,7 +202,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "Montserrat_500Medium",
-        paddingLeft: width * 0.03,
+        paddingHorizontal: width * 0.03,
         fontSize: width * 0.03
     },
     textContainer: {
@@ -154,6 +225,16 @@ const styles = StyleSheet.create({
         marginTop: width * 0.1,
         width: width * 0.85,
         height: width * 0.5
+    },
+    dateTime: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: width * 0.03
+    },
+    calcText: {
+        fontFamily: "Montserrat_500Medium",
+        fontSize: width * 0.04
     }
 })
 

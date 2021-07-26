@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dimensions, SafeAreaView, StyleSheet, View} from "react-native";
+import {Dimensions, Image, SafeAreaView, StyleSheet, TouchableOpacity, View} from "react-native";
 import {LinearGradient} from "expo-linear-gradient";
 import {createStackNavigator} from "@react-navigation/stack";
 
@@ -26,6 +26,10 @@ const AddressesRoot = () => {
                               end={[1, 0]}
                               style={[StyleSheet.absoluteFill, {paddingBottom: width * 0.25}]}>
               </LinearGradient>
+          ),
+          headerRight: () => (
+              <TouchableOpacity>
+              </TouchableOpacity>
           )
       }}>
           <Stack.Screen name="Ваши адреса" component={Addresses}/>
@@ -38,5 +42,13 @@ const Addresses = () => {
 
     </SafeAreaView>
 }
+
+const styles = StyleSheet.create({
+    rightBtn: {
+        width: width * 0.08,
+        height: width * 0.08,
+        justifyContent: "flex-end"
+    }
+})
 
 export default AddressesRoot;
