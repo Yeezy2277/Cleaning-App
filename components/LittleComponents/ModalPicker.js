@@ -62,7 +62,8 @@ const styles = StyleSheet.create({
         width : width * 0.85
     },
     text: {
-      fontFamily: "Montserrat_500Medium"
+        fontFamily: "Montserrat_500Medium",
+        color: "#2eade8"
     },
     pickerIcon: {
         borderLeftWidth: 2,

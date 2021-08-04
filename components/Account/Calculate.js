@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
     Text,
     View,
@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     Modal,
     FlatList,
-    TextInput
+    TextInput, Keyboard
 } from "react-native";
 import {createStackNavigator} from "@react-navigation/stack";
 import {LinearGradient} from "expo-linear-gradient";
@@ -21,12 +21,16 @@ import MyInput from "../LittleComponents/MyInput";
 import MapView from "react-native-maps";
 import Svg, {Defs, Path} from "react-native-svg";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import MapInput from "./Search/MapInput";
+import MyMapView from "./Search/MyMapView";
+import {Ionicons} from "@expo/vector-icons";
+import {UserContext} from "../Common/UserProvider";
 
 const width = Dimensions.get("screen").width;
 
 const Stack = createStackNavigator();
 
-const CalculateRoot = () => {
+const CalculateRoot = ({navigation}) => {
     let [fontsLoaded] = useFonts({
         Montserrat_400Regular, Montserrat_500Medium
     });
@@ -55,12 +59,18 @@ const CalculateRoot = () => {
                 )
             }}>
                 <Stack.Screen name="Калькулятор" component={Calculate}/>
+                <Stack.Screen options={{
+                    headerLeft: () => null,
+                    headerRight: () => <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <Ionicons name="checkmark-circle" size={40}/>
+                    </TouchableOpacity>
+                }} name="Карта" component={MyMapView}/>
             </Stack.Navigator>
         );
     };
 };
 
-const Calculate = () => {
+const Calculate = ({navigation}) => {
     const [value, setValue] = useState(12);
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
@@ -90,8 +100,22 @@ const Calculate = () => {
         setTimeValue(`${time.getHours()}:${time.getMinutes()}`)
         hideTimePicker();
     };
+    useEffect(() => {
+        Keyboard.addListener("keyboardDidShow", _keyboardDidShow);
+
+        // cleanup function
+        return () => {
+            Keyboard.removeListener("keyboardDidShow", _keyboardDidShow);
+        };
+    }, []);
+
+    const [keyboardStatus, setKeyboardStatus] = useState(undefined);
+    const [ state, dispatch ] = useContext(UserContext)
+    const _keyboardDidShow = () => navigation.navigate("Карта",{
+        onGoBack: () => dispatch({ type: "IS_NOT_SELECTED_MAP" }),
+    });
     return (
-        <FlatList showsVerticalScrollIndicator={false} data={["1"]} renderItem={({item}) => (
+        <FlatList keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} data={["1"]} renderItem={({item}) => (
             <SafeAreaView style={styles.container}>
                 <Text style={styles.text}>Тип уборки</Text>
                 <ModalPicker options={["Регулярная уборка", "Генеральная уборка", "Уборка после ремонта"]}/>
@@ -126,7 +150,7 @@ const Calculate = () => {
                     </View>
                 </View>
                 <Text style={[styles.text, {marginTop: width * 0.09}]}>Адрес помещения</Text>
-                <MyInput placeholder={"Город, улица, дом"} />
+                <MyInput placeholder={"Город, улица, дом"}  onSubmitEditing={Keyboard.dismiss}/>
                 <MyInput placeholder={"Квартира, офис"} width={width * 0.4} />
                 <MyInput placeholder={"Этаж, особенности прохода, комментарии"} height={width * 0.3}/>
                 <MapView style={styles.map} initialRegion={{

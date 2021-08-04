@@ -1,5 +1,5 @@
 import {View, Text, TouchableOpacity, Dimensions} from 'react-native';
-import React from "react";
+import React, {useEffect} from "react";
 import {LinearGradient} from "expo-linear-gradient";
 import {Montserrat_400Regular, Montserrat_500Medium, Montserrat_700Bold, useFonts} from "@expo-google-fonts/montserrat";
 import AppLoading from "expo-app-loading";

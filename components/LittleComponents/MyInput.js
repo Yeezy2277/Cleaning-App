@@ -22,7 +22,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         fontFamily: "Montserrat_500Medium",
         paddingLeft: width * 0.03,
-        fontSize: width * 0.03
+        fontSize: width * 0.03,
+        backgroundColor: "#fff"
     }
 })
 
