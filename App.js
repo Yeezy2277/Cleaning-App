@@ -5,8 +5,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Login from "./components/Auth/Login";
 import {NavigationContainer} from "@react-navigation/native";
 import AccountRoot from "./components/Account/AccountRoot";
+import MyMapView from "./components/Account/Search/MyMapView";
+import {Dimensions, StyleSheet, TouchableOpacity} from "react-native";
+import {Ionicons} from "@expo/vector-icons";
+import {LinearGradient} from "expo-linear-gradient";
 
 const Stack = createStackNavigator();
+
+const width = Dimensions.get("screen").width;
 
 export const AuthContext = React.createContext();
 
@@ -88,15 +94,36 @@ export default function App({ navigation }) {
   return (
       <AuthContext.Provider value={authContext}>
           <NavigationContainer>
-              <Stack.Navigator screenOptions={{
-                  headerShown: false
-              }}>
                   {state.userToken == null ? (
+                      <Stack.Navigator screenOptions={{
+                          headerShown: false
+                      }}>
                       <Stack.Screen name="SignIn" component={Login} />
+                      </Stack.Navigator>
                   ) : (
+                      <Stack.Navigator screenOptions={{
+                          headerShown: false
+                      }}>
                       <Stack.Screen name="Home" component={AccountRoot} />
+                          <Stack.Screen options={{
+                              headerShown: true,
+                              headerLeft: () => null,
+                              headerTitleStyle: {
+                                  fontFamily: "Montserrat_500Medium",
+                                  justifyContent: "flex-end",
+                                  alignSelf: "flex-start",
+                                  color: "white",
+                                  fontSize: width * 0.06
+                              },
+                              headerBackground: () => (
+                                  <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
+                                                  end={[1, 0]}
+                                                  style={StyleSheet.absoluteFill}>
+                                  </LinearGradient>
+                              )
+                          }} name="Карта" component={MyMapView}/>
+                      </Stack.Navigator>
                   )}
-              </Stack.Navigator>
           </NavigationContainer>
       </AuthContext.Provider>
   );

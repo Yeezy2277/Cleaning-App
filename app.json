@@ -17,13 +17,23 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yeazzy.CleaningApp",
+      "config": {
+        "googleMapsApiKey": "AIzaSyB1LhEAWQxJrm2Vp5Dci-cvcFcYEFdOD_Y"
+      }
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB1LhEAWQxJrm2Vp5Dci-cvcFcYEFdOD_Y"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.yeazzy.CleaningApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

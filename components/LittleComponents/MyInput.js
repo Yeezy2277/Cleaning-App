@@ -3,9 +3,14 @@ import {TextInput, StyleSheet, Dimensions} from "react-native";
 
 const width = Dimensions.get("screen").width;
 
-const MyInput = (props) => {
+const MyInput = (props, {navigation}) => {
     return (
-        <TextInput style={props.width ? [styles.input, {width : props.width}] : props.height ? [styles.input, {height : props.height}] : [styles.input]} placeholder={props.placeholder} value={props.value} onFocus={props.onFocus} onBlur={props.onBlur} onChangeText={props.onChangeText}/>
+        <TextInput
+            style={props.width ? [styles.input, {width: props.width}] : props.height ? [styles.input, {height: props.height}] : props.alignSelf ? [styles.input, {alignSelf: props.alignSelf}] : [styles.input]}
+            placeholder={props.placeholder} value={props.value} onFocus={props.onFocus} onBlur={props.onBlur}
+            multiline={props.multiline}
+            onChangeText={props.onChangeText} keyboardType={props.keyboardType}
+        />
     );
 };
 
@@ -21,7 +26,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "Montserrat_500Medium",
-        paddingLeft: width * 0.03,
+        paddingHorizontal: width * 0.03,
         fontSize: width * 0.03,
         backgroundColor: "#fff"
     }

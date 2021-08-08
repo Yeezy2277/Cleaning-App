@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Dimensions, Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import ModalPickerItem from "./ModalPickerItem";
 import Svg, {Path} from "react-native-svg";
@@ -16,6 +16,9 @@ const ModalPicker = (props) => {
     }
     const [chooseData, setChooseData] = useState(props.options[0])
     const [isModalVisible, setModalVisible] = useState(false)
+    useEffect(() => {
+        props.callback ? props.callback(chooseData) : null;
+    }, [chooseData])
     let [fontsLoaded] = useFonts({
         Montserrat_400Regular, Montserrat_500Medium
     });
@@ -59,7 +62,8 @@ const styles = StyleSheet.create({
         borderColor: "#2eade8",
         borderWidth: 2,
         borderRadius: 15,
-        width : width * 0.85
+        width : width * 0.85,
+        backgroundColor: "#fff"
     },
     text: {
         fontFamily: "Montserrat_500Medium",
