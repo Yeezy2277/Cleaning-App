@@ -4,6 +4,7 @@ import ModalPickerItem from "./ModalPickerItem";
 import Svg, {Path} from "react-native-svg";
 import {Montserrat_400Regular, Montserrat_500Medium, useFonts} from "@expo-google-fonts/montserrat";
 import AppLoading from "expo-app-loading";
+import {Colors} from "../view/colors";
 
 const width = Dimensions.get("screen").width;
 
@@ -12,13 +13,12 @@ const ModalPicker = (props) => {
         setModalVisible(bool)
     }
     const setData = (option) => {
-        setChooseData(option)
+        props.setChooseData(option)
     }
-    const [chooseData, setChooseData] = useState(props.options[0])
     const [isModalVisible, setModalVisible] = useState(false)
     useEffect(() => {
-        props.callback ? props.callback(chooseData) : null;
-    }, [chooseData])
+        props.callback ? props.callback(props.chooseData) : null;
+    }, [props.chooseData])
     let [fontsLoaded] = useFonts({
         Montserrat_400Regular, Montserrat_500Medium
     });
@@ -28,7 +28,7 @@ const ModalPicker = (props) => {
         return (
             <SafeAreaView>
                 <TouchableOpacity style={styles.container} onPress={() => changeModalVisibility(true)}>
-                    <Text style={styles.text}>{chooseData}</Text>
+                    <Text style={styles.text}>{props.chooseData}</Text>
                     <View style={styles.pickerIcon}>
                         <Svg width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <Path fill-rule="evenodd" clip-rule="evenodd"
@@ -52,27 +52,24 @@ const ModalPicker = (props) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: width * 0.02,
-        height: width * 0.13,
-        paddingLeft: width * 0.018,
+        marginTop: 15,
+        height: 56,
+        paddingLeft: 24,
         paddingRight: width * 0.03,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        borderColor: "#2eade8",
-        borderWidth: 2,
         borderRadius: 15,
         width : width * 0.85,
-        backgroundColor: "#fff"
+        backgroundColor: Colors.lightGray
     },
     text: {
-        fontFamily: "Montserrat_500Medium",
-        color: "#2eade8"
+        fontWeight: "400",
+        color: Colors.black,
+        fontSize: 15
     },
     pickerIcon: {
-        borderLeftWidth: 2,
-        borderLeftColor: "#2eade8",
-        paddingLeft: width * 0.02,
+        paddingRight: 25,
         height: width * 0.12,
         justifyContent: "center",
         alignItems: "center",

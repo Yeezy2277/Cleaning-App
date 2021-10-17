@@ -24,7 +24,7 @@ function MapInput({onSubmitEditing}) {
                 longitudeDelta: 0.003
             })
         })
-        console.warn(loc)
+        console.log(loc)
     }
     const getNameFromCoords = (reg) => {
         geocodeLocationByCoords(reg.latitude, reg.longitude).then(r => {
@@ -47,7 +47,7 @@ function MapInput({onSubmitEditing}) {
                     returnKeyType={'search'} // Can be left out for default return key
                     listViewDisplayed={false}    // true/false/undefined
                     onPress={(data) => { // 'details' is provided when fetchDetails = true
-                        console.warn(data);
+                        console.log(data);
                     }
                     }
                     styles={{
@@ -61,7 +61,7 @@ function MapInput({onSubmitEditing}) {
                             color: "#2eade8",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontFamily: "Montserrat_500Medium",
+                            fontWeight: "500",
                             paddingLeft: width * 0.03,
                             fontSize: width * 0.03,
                         },

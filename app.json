@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "CleaningApp",
-    "slug": "CleaningApp",
-    "version": "1.0.0",
+    "name": "M-Cleaning",
+    "slug": "M-Cleaning",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -24,6 +24,7 @@
       }
     },
     "android": {
+      "versionCode": 3,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyB1LhEAWQxJrm2Vp5Dci-cvcFcYEFdOD_Y"

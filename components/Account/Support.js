@@ -1,12 +1,27 @@
-import React, {useEffect} from 'react';
-import {Dimensions, FlatList, Image, SafeAreaView, StyleSheet, Text, View} from "react-native";
+import React, {useEffect, useState} from 'react';
+import {
+    Dimensions,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    View,
+    Linking,
+    TouchableOpacity
+} from "react-native";
 import {createStackNavigator} from "@react-navigation/stack";
 import {LinearGradient} from "expo-linear-gradient";
 import ModalPicker from "../LittleComponents/ModalPicker";
 import MyInput from "../LittleComponents/MyInput";
 import MyButton from "../LittleComponents/MyButton";
 import phoneImg from "../../assets/phone-call.png";
-import {useForm, Controller } from "react-hook-form";
+import {useForm, Controller} from "react-hook-form";
+import {accountAPI, supportAPI} from "../api";
+import {setTokenRequest} from "../utils/Common Functions";
+import {alertQuestion, commonError} from "../alerts";
+import Preloader from "../view/Common/Preloader";
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 
 const width = Dimensions.get("screen").width;
 
@@ -15,21 +30,21 @@ const Stack = createStackNavigator();
 const SupportRoot = () => {
     return (
         <Stack.Navigator screenOptions={{
-            headerTitleContainerStyle: {
-                paddingLeft: width * 0.018,
-                paddingTop: width * 0.06
+            headerStyle: {
+                height: width * 0.27
             },
+            headerTitleAlign: "center",
             headerTitleStyle: {
-                fontFamily: "Montserrat_500Medium",
+                fontWeight: "500",
+                justifyContent: "center",
+                alignSelf: "center",
                 color: "white",
-                fontSize: width * 0.06,
-                justifyContent: "flex-end",
-                alignSelf: "flex-start",
+                fontSize: 24
             },
             headerBackground: () => (
                 <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
                                 end={[1, 0]}
-                                style={[StyleSheet.absoluteFill, {paddingBottom: width * 0.25}]}>
+                                style={[StyleSheet.absoluteFill]}>
                 </LinearGradient>
             )
         }}>
@@ -40,50 +55,55 @@ const SupportRoot = () => {
 
 const Support = () => {
     const {control, register, handleSubmit} = useForm();
-    return <FlatList showsVerticalScrollIndicator={false} data={["1"]} renderItem={({item}) => (
-        <SafeAreaView style={styles.container}>
-            <Text style={styles.text}>Тип запроса</Text>
-            <ModalPicker options={["Вопросы по заказу", "Вопросы по технической части"]}/>
-            <Text style={[styles.text, {marginTop: width * 0.03}]}>Тема запроса</Text>
-            <Controller
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-
-                    <MyInput placeholder={"Иванов"}
-                             onBlur={onBlur}
-                             onChangeText={onChange}
-                             value={value} />
-                )}
-                name="theme"
-                defaultValue=""
-            />
-            <Text style={[styles.text, {marginTop: width * 0.03}]}>Текст обращения</Text>
-            <Controller
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <MyInput placeholder={"Пожелания, запросы"}
-                             onBlur={onBlur}
-                             onChangeText={onChange}
-                             height={width * 0.3}
-                             value={value} />
-                )}
-                name="text"
-                defaultValue=""
-            />
-            <MyButton title={"Отправить запрос"} width={width * 0.85}/>
-            <Text style={[styles.text, {marginTop: width * 0.09}]}>Телефон поддержки</Text>
-            <View style={styles.phone}>
-                <Image source={phoneImg} style={styles.image}/>
-                <Text style={[styles.text, {fontSize: width * 0.06, marginLeft: width * 0.03, alignSelf: "center"}]}>+ 7(925) 071-79-78</Text>
-            </View>
-        </SafeAreaView>
-    )}/>
+    const [text, setText] = useState(null);
+    const [chooseData, setChooseData] = useState("Вопросы по заказу");
+    const [isPending, setIsPending] = useState(false);
+    const callPhone = () =>{
+        const url='tel://+79958837929'
+        Linking.openURL(url)
+    }
+    const onSubmit = () => {
+        setIsPending(true);
+        setTokenRequest(supportAPI.createQuestions, {question_type: chooseData, answer: null, text}).then(r => {
+            if (r === undefined) {
+                commonError();
+                setIsPending(false);
+            } else {
+                alertQuestion();
+                setIsPending(false);
+            }
+        }).catch(() => {
+            commonError();
+            setIsPending(false);
+        })
+    }
+    return isPending ? <Preloader/> :
+        <KeyboardAwareScrollView style={{flex: 1, backgroundColor: "white"}}>
+            <FlatList keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false} data={["1"]}
+                      renderItem={({item}) => (
+                          <SafeAreaView style={styles.container}>
+                              <Text style={styles.text}>Тип запроса</Text>
+                              <ModalPicker setChooseData={setChooseData} chooseData={chooseData} options={["Вопросы по заказу", "Вопросы по технической части"]}/>
+                              <Text style={[styles.text, {marginTop: width * 0.03}]}>Текст обращения</Text>
+                              <MyInput placeholder={"Пожелания, запросы"}
+                                       onChangeText={setText}
+                                       multiline={true}
+                                       marginTop={15}
+                                       height={width * 0.3}
+                                       value={text}/>
+                              <MyButton title={"Отправить запрос"} onPress={onSubmit} marginTop={30} width={width * 0.85}/>
+                              <Text style={[styles.text, {marginTop: width * 0.09}]}>Телефон поддержки</Text>
+                              <TouchableOpacity onPress={callPhone} style={styles.phone}>
+                                  <Image source={phoneImg} style={styles.image}/>
+                                  <Text style={[styles.text, {
+                                      fontSize: width * 0.06,
+                                      marginLeft: width * 0.03,
+                                      alignSelf: "center"
+                                  }]}>+7 (995) 883-79-29</Text>
+                              </TouchableOpacity>
+                          </SafeAreaView>
+                      )}/>
+        </KeyboardAwareScrollView>
 }
 
 const styles = StyleSheet.create({
@@ -95,7 +115,7 @@ const styles = StyleSheet.create({
     text: {
         alignSelf: "flex-start",
         fontSize: width * 0.043,
-        fontFamily: "Montserrat_400Regular"
+        fontWeight: "400",
     },
     image: {
         width: width * 0.15,

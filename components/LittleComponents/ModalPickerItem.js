@@ -22,7 +22,7 @@ const ModalPickerItem = (props) => {
         return (
             <TouchableOpacity onPress={() => props.changeModalVisibility(false)} style={styles.container}>
                 <View style={styles.modal}>
-                    <FlatList data={props.options} renderItem={({item, index}) => (
+                    <FlatList keyboardShouldPersistTaps='handled' data={props.options} renderItem={({item, index}) => (
                         <TouchableOpacity style={styles.option} key={index} onPress={() => onPressItem(item)}>
                             <Text style={styles.text}>
                                 {item}
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     },
     text: {
         margin: width * 0.05,
-        fontFamily: "Montserrat_500Medium"
+        fontWeight: "500",
     }
 })
 

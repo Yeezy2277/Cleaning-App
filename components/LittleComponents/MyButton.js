@@ -6,7 +6,7 @@ const width = Dimensions.get("screen").width;
 
 const MyButton = (props) => {
     return (
-        <TouchableOpacity style={styles.button} disabled={props.disabled}
+        <TouchableOpacity style={props.width ? [styles.button, {width: props.width}] : styles.button} disabled={props.disabled}
                           onPress={props.onPress}>
             <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
                             style={styles.gradientButton}
@@ -22,17 +22,18 @@ const styles = StyleSheet.create({
         marginTop: width * 0.05,
         width: width * 0.75,
         justifyContent: "center",
-        textAlign: "center"
+        textAlign: "center",
+        alignSelf: "center"
     },
     gradientButton: {
-        height: width * 0.13,
+        height: 55,
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 15
+        borderRadius: 15,
     },
     textButton: {
-        fontFamily: "Montserrat_500Medium",
-        fontSize: 22,
+        fontWeight: "500",
+        fontSize: 20,
         color: "white"
     },
 })

@@ -11,7 +11,7 @@ export default function GooglePlacesInput() {
                 placeholder='Search'
                 onPress={(data, details = null) => {
                     // 'details' is provided when fetchDetails = true
-                    console.warn(data, details);
+                    console.log(data, details);
                 }}
                 query={{
                     key: 'AIzaSyB1LhEAWQxJrm2Vp5Dci-cvcFcYEFdOD_Y',

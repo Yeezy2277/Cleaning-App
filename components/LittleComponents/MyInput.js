@@ -1,14 +1,22 @@
 import React from 'react';
-import {TextInput, StyleSheet, Dimensions} from "react-native";
+import {TextInput, StyleSheet, Dimensions, Platform} from "react-native";
+import {Colors} from "../view/colors";
 
 const width = Dimensions.get("screen").width;
 
 const MyInput = (props, {navigation}) => {
     return (
         <TextInput
-            style={props.width ? [styles.input, {width: props.width}] : props.height ? [styles.input, {height: props.height}] : props.alignSelf ? [styles.input, {alignSelf: props.alignSelf}] : [styles.input]}
+            style={props.width ? [styles.input, {width: props.width, marginTop: props.marginTop ? props.marginTop : width * 0.02,
+                textAlign: props.textAlignCenter ? "center" : "left", borderWidth: props.borderWidth ? props.borderWidth : 0,
+                borderColor: props.borderColor ? props.borderColor : "red"}] : props.height ? [styles.input, {height: props.height,
+                marginTop: props.marginTop ? props.marginTop : width * 0.02, borderWidth: props.borderWidth ? props.borderWidth : 0,
+                borderColor: props.borderColor ? props.borderColor : "#fff", paddingTop: Platform.OS === 'ios' ? 20 : 0}] : styles.input}
             placeholder={props.placeholder} value={props.value} onFocus={props.onFocus} onBlur={props.onBlur}
+            onSubmitEditing={props.onSubmitEditing}
             multiline={props.multiline}
+            placeholderTextColor={"#6E7191"}
+            maxLength={props.maxLength}
             onChangeText={props.onChangeText} keyboardType={props.keyboardType}
         />
     );
@@ -17,18 +25,17 @@ const MyInput = (props, {navigation}) => {
 const styles = StyleSheet.create({
     input: {
         width: width * 0.85,
-        height: width * 0.13,
-        borderWidth: 2,
-        borderColor: "#2eade8",
-        borderRadius: 15,
+        height: 56,
+        borderRadius: 16,
         marginTop: width * 0.02,
-        color: "#2eade8",
+        color: Colors.violet,
+        borderColor: "red",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "Montserrat_500Medium",
-        paddingHorizontal: width * 0.03,
-        fontSize: width * 0.03,
-        backgroundColor: "#fff"
+        fontWeight: "400",
+        paddingHorizontal: 24,
+        fontSize: 15,
+        backgroundColor: Colors.lightGray
     }
 })
 

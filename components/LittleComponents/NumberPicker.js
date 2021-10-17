@@ -64,13 +64,13 @@ const styles = StyleSheet.create({
         flexDirection: "row"
     },
     text: {
-      fontFamily: "Montserrat_500Medium"
+        fontWeight: "500",
     },
     sup: {
         fontSize:10,
         lineHeight:15,
         textAlignVertical: 'top',
-        fontFamily: "Montserrat_500Medium"
+        fontWeight: "500",
     },
     pickerIcon: {
         borderLeftWidth: 2,

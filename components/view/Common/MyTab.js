@@ -65,7 +65,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
                                 : route.name === "Адреса" ? <Ionicons name={isFocused ? "location" : "location-outline"} size={40} color={"#fff"}/>
                                     : route.name === "Помощь" ? <Ionicons name={isFocused ? "headset" : "headset-outline"} size={40} color={"#fff"}/>
                                         : route.name === "Аккаунт" ? <Ionicons name={isFocused ? "person" : "person-outline"} size={40} color={"#fff"}/> : null}
-                            <Text style={{color: '#fff', fontFamily: "Montserrat_500Medium"}}>
+                            <Text style={{color: '#fff', fontWeight: "500",}}>
                                 {label}
                             </Text>
                         </TouchableOpacity>

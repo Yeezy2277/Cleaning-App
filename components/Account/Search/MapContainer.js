@@ -42,7 +42,7 @@ class MapContainer extends React.Component {
     }
     getNameFromCoords(reg) {
         geocodeLocationByCoords(reg.latitude, reg.longitude).then(r => {
-            console.warn(r.results[0].formatted_address);
+            console.log(r.results[0].formatted_address);
         })
     }
 
@@ -68,7 +68,7 @@ class MapContainer extends React.Component {
                                 region={this.state.region}
                                 onRegionChange={(reg) => {
                                     this.onMapRegionChange(reg)
-                                    // console.warn(reg)
+                                    // console.log(reg)
                                     this.getNameFromCoords(reg)
                                 }} />
                         </View> : null}

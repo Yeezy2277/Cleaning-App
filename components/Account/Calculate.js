@@ -1,32 +1,51 @@
 import React, {useContext, useEffect, useRef, useState} from 'react';
-import {
-    Text,
-    View,
-    StyleSheet,
-    Dimensions,
-    SafeAreaView,
-    TouchableOpacity,
-    FlatList,
-    TextInput, Keyboard
-} from "react-native";
+import {Text, View, StyleSheet, Dimensions, SafeAreaView, TouchableOpacity,
+    FlatList, TextInput, Keyboard, Image, ImageBackground, Animated, Platform} from "react-native";
 import {createStackNavigator} from "@react-navigation/stack";
 import {LinearGradient} from "expo-linear-gradient";
 import {Montserrat_400Regular, Montserrat_500Medium, useFonts} from "@expo-google-fonts/montserrat";
 import AppLoading from "expo-app-loading";
-import ModalPicker from "../LittleComponents/ModalPicker";
 import MyInput from "../LittleComponents/MyInput";
 import MapView, {Marker} from "react-native-maps";
-import Svg, {Defs, Path} from "react-native-svg";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import {UserContext} from "../Common/UserProvider";
-import MarkerCustom from "../Common/Marker";
-import {getLocation} from "./Search/GetLocation";
-import Preloader from "../Common/Preloader";
+import {geocodeLocationByCoords, getLocation} from "./Search/GetLocation";
+import Preloader from "../view/Common/Preloader";
 import * as SecureStore from 'expo-secure-store';
 import {Modalize} from "react-native-modalize";
-import Modal from 'react-native-modal';
 import MyButton from "../LittleComponents/MyButton";
 import {WebView} from "react-native-webview";
+import {calculateLocationError, commonError, errorChooseDateOrTime, errorFetchCalculator} from "../alerts";
+import { Host, Portal } from 'react-native-portalize';
+import regular from "../../assets/regular.png";
+import general from "../../assets/general.png";
+import afterBuild from "../../assets/afterBuild.png";
+
+import hotelBackground from "../../assets/hotelBackground.png";
+import officeBackground from "../../assets/officeBackground.png";
+import homeBackground from "../../assets/homeBackground.png";
+import cafeBackground from "../../assets/cafeBackground.png";
+
+import radio from "../../assets/Radio.png";
+import plus from "../../assets/plus.png";
+import clock from "../../assets/Time.png";
+import star from "../../assets/Star.png";
+import stack from "../../assets/Stack.png";
+import hotel from "../../assets/Hotel.png";
+import office from "../../assets/Office.png";
+import home from "../../assets/Home.png";
+import coffee from "../../assets/coffee.png";
+import calendar from "../../assets/Calandar.png";
+import time from "../../assets/Time-gray.png";
+import PaymentModal from "../modals/PaymentModal";
+import {Colors} from "../view/colors";
+import MarkerCustom from "../view/Common/Marker";
+import {accountAPI, calculateAPI} from "../api";
+import MyMapView from "./Search/MyMapView";
+import {Appearance} from "react-native-appearance";
+import {setTokenRequest} from "../utils/Common Functions";
+import {AuthContext} from "../../App";
+import PaymentScreen from "./PaymentScreen";
+import {Ionicons} from "@expo/vector-icons";
 
 const width = Dimensions.get("screen").width;
 
@@ -40,70 +59,125 @@ const CalculateRoot = ({navigation}) => {
         return <AppLoading/>;
     } else {
         return (
-            <Stack.Navigator screenOptions={{
-                headerTitleContainerStyle: {
-                    paddingLeft: width * 0.018,
-                    paddingTop: width * 0.06
-                },
-                headerTitleStyle: {
-                    fontFamily: "Montserrat_500Medium",
-                    height: "100%",
-                    justifyContent: "flex-end",
-                    alignSelf: "flex-start",
-                    color: "white",
-                    fontSize: width * 0.06
-                },
-                headerBackground: () => (
-                    <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
-                                    end={[1, 0]}
-                                    style={[StyleSheet.absoluteFill, {paddingBottom: width * 0.25}]}>
-                    </LinearGradient>
-                )
-            }}>
-                <Stack.Screen name="Калькулятор" component={Calculate}/>
-            </Stack.Navigator>
+            <Host>
+                <Stack.Navigator screenOptions={{
+                    headerStyle: {
+                        height: width * 0.27
+                    },
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontWeight: "500",
+                        justifyContent: "center",
+                        alignSelf: "center",
+                        color: "white",
+                        fontSize: 24
+                    },
+                    headerBackground: () => (
+                        <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
+                                        end={[1, 0]}
+                                        style={[StyleSheet.absoluteFill]}>
+                        </LinearGradient>
+                    )
+                }}>
+                    <Stack.Screen name="Калькулятор" component={Calculate}/>
+                    <Stack.Screen name="Платеж" options={{
+                        headerBackTitleVisible: false,
+                        headerBackImage: () => (
+                            <Ionicons name={"close-outline"} size={30} color={"white"}/>
+                        )
+                    }} component={PaymentScreen}/>
+                    <Stack.Screen name="Карта" options={{
+                        headerShown: true,
+                        headerStyle: {
+                            height: width * 0.27
+                        },
+                        headerTitleAlign: "center",
+                        headerLeft: () => null,
+                        headerTitleStyle: {
+                            fontWeight: "500",
+                            justifyContent: "center",
+                            alignSelf: "center",
+                            color: "white",
+                            fontSize: 24
+                        },
+                        headerBackground: () => (
+                            <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
+                                            end={[1, 0]}
+                                            style={[StyleSheet.absoluteFill]}>
+                            </LinearGradient>
+                        )
+                    }} component={MyMapView}/>
+                </Stack.Navigator>
+            </Host>
         );
     }
-    ;
 };
 
 const Calculate = ({navigation, route}) => {
-    const modalizeRef = useRef<Modalize>null;
+    const [ state, dispatch ] = useContext(AuthContext);
+    let modal = useRef(null).current;
+
+    const [isModalOpen, setModalOpen] = useState(false);
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
 
     const [type, setType] = useState("");
+    const [prices, setPrices] = useState({
+        regular: 0,
+        general: 0,
+        afterBuild: 0,
+        flat: 0,
+        office: 0,
+        home: 0,
+        cafe: 0,
+        square: 0,
+        door: 0,
+        window: 0,
+        toilet: 0,
+        mkad: 0
+    })
+
+    const [isErrorField, setErrorField] = useState(false);
+    const [info, setInfo] = useState({});
     const [square, setSquare] = useState("");
-    const [squareMeter, setSquareMeter] = useState(null);
-    const [doorCount, setDoorCount] = useState(null);
-    const [windowCount, setWindowCount] = useState(null);
-    const [toiletCount, setToiletCount] = useState(null);
-    const [mileageMkad, setMileageMkad] = useState(null);
+    const [squareMeter, setSquareMeter] = useState("");
+    const [doorCount, setDoorCount] = useState("");
+    const [windowCount, setWindowCount] = useState("");
+    const [toiletCount, setToiletCount] = useState("");
+    const [mileageMkad, setMileageMkad] = useState("");
+    const [flat, setFlat] = useState("");
+    const [comment, setComment] = useState("");
     const [bonusKoef, setBonusKoef] = useState(0.05)
+    const [colorPicker, setColorPicker] = useState("");
+
+    const [regularState, setRegularState] = useState(true);
+    const [generalState, setGeneralState] = useState(false);
+    const [afterBuildState, setAfterBuildState] = useState(false);
+
+    const [hotelState, setHotelState] = useState(true);
+    const [officeState, setOfficeState] = useState(false);
+    const [homeState, setHomeState] = useState(false);
+    const [cafeState, setCafeState] = useState(false);
+
+    const [bonusSize, setBonusSize] = useState(0);
 
     const [allSum, setAllSum] = useState(0);
     const [cleanSum, setCleanSum] = useState(0);
     const [roadSum, setRoadSum] = useState(0);
     const [bonusSum, setBonusSum] = useState(0);
 
-    const [money, setMoney] = useState({
-        typeClean: 0,
-        typeBuilding: 0,
-        priceSquare: 0,
-        square : 0,
-        doors: 0,
-        windows: 0,
-        toilets: 0
-    });
-
-    const [dateValue, setDateValue] = useState("1999-01-01");
-    const [timeValue, setTimeValue] = useState("16:00");
-
-    const [isOpenInput, setIsOpenInput] = useState(false);
+    const [dateValue, setDateValue] = useState("Дата");
+    const [dateString, setDateString] = useState(null);
+    const [timeValue, setTimeValue] = useState("Время");
 
     const mapRef = useRef();
+    const mainFlatList = useRef(null);
+    const cleanFlatList = useRef(null);
+    const buildFlatList = useRef(null);
+
     const [isPending, setIsPending] = useState(true);
     const [region, setRegion] = useState({});
+    const [initialRegion, setInitialRegion] = useState({});
 
     const [address, setAddress] = useState("");
     const updateAddress = async (string, reg, camera) => {
@@ -111,8 +185,8 @@ const Calculate = ({navigation, route}) => {
         setRegion(reg)
         camera.zoom = 12;
         mapRef.current?.animateCamera(camera)
-        console.warn(string);
-        console.warn(reg);
+        console.log(string);
+        console.log(reg);
     }
     const showDatePicker = () => {
         setDatePickerVisibility(true);
@@ -128,22 +202,16 @@ const Calculate = ({navigation, route}) => {
         setTimePickerVisibility(false);
     };
 
-    const handleConfirmDate = (date) => {
-        setDateValue(`${date.getFullYear()}-${date.getMonth()}-${date.getDay()}`)
+    const handleConfirmDate = date => {
+        setDateString(`${date.getDate() < 10 ? "0" : ""}${date.getDate()}.${date.getMonth() + 1 < 10 ? "0" : ""}${date.getMonth() + 1}.${date.getFullYear()}`);
+        setDateValue(`${date.getFullYear()}-${date.getMonth() + 1 < 10 ? "0" : ""}${date.getMonth() + 1}-${date.getDate() < 10 ? "0" : ""}${date.getDate()}`);
         hideDatePicker();
     };
-    const handleConfirmTime = (time) => {
-        setTimeValue(`${time.getHours()}:${time.getMinutes()}`)
+    const handleConfirmTime = time => {
+        setTimeValue(`${time.getHours() < 10 ? "0" : ""}${time.getHours()}:${time.getMinutes() < 10 ? "0" : ""}${time.getMinutes()}`);
         hideTimePicker();
     };
-    const onOpen = () => {
-        modalizeRef.current?.open();
-    };
-    const [isModalVisible, setModalVisible] = useState(false);
-
-    const toggleModal = () => {
-        setModalVisible(!isModalVisible);
-    };
+    const [isScroll, setScroll] = useState(true);
     const getInitialState = () => {
         getLocation().then(
             (data) => {
@@ -154,219 +222,393 @@ const Calculate = ({navigation, route}) => {
                     latitudeDelta: 0.003,
                     longitudeDelta: 0.003
                 })
-                setIsPending(false);
+                setInitialRegion({
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    latitudeDelta: 0.003,
+                    longitudeDelta: 0.003
+                })
+                geocodeLocationByCoords(data.latitude, data.longitude).then(r => {
+                    setAddress(r.results[0].formatted_address);
+                    setTokenRequest(accountAPI.getAccount).then(r => {
+                        if (r === undefined) {
+                            calculateLocationError(getInitialState)
+                        } else {
+                            console.log(r);
+                            setBonusSize(r.data.main_info.bonus_balance);
+                            console.log(`bonus size ${r.data.main_info.bonus_balance}`)
+                            calculateAPI.getOptions().then(r => {
+                                let obj = {...prices};
+                                obj.regular = r.data.type_regular;
+                                obj.general = r.data.type_general;
+                                obj.afterBuild = r.data.type_after_repair;
+                                obj.flat = r.data.type_building_flat;
+                                obj.office = r.data.type_building_office;
+                                obj.house = r.data.type_building_house;
+                                obj.cafe = r.data.type_building_cafe;
+                                obj.square = r.data.area;
+                                obj.door = r.data.door;
+                                obj.window = r.data.window;
+                                obj.toilet = r.data.bathroom;
+                                obj.mkad = r.data.mkad;
+                                setPrices(obj);
+                                console.log(obj);
+                                setColorPicker(Appearance.getColorScheme());
+                                setIsPending(false);
+                            })
+                        }
+                    }).catch(() => calculateLocationError(getInitialState))
+                })
             }
-        );
+        ).catch(() => calculateLocationError(getInitialState));
     }
     useEffect(() => {
         (async () => {
             getInitialState()
-            await SecureStore.setItemAsync("square", "100")
         })()
     }, [])
     useEffect(() => {
-        let object = {...money};
-        object.typeClean = type === "Регулярная уборка" ? 50
-            : type === "Генеральная уборка" ? 100 : type === "Уборка после ремонта" ? 120 : null
-        object.typeBuilding = square === "Квартира" ? 0
-            : square === "Офис" ? 0.5 : square === "Загородный дом" ? 0.8 : square === "Кафе или ресторан" ? 1.5 : null
+        if (state.isSetData) {
+            setIsPending(true);
+            setTokenRequest(calculateAPI.getAddress, {id: state.id}).then(r => {
+                if (r === undefined) {
+                    commonError();
+                } else {
+                    console.warn(r);
+                    setAddress(r.data.adress);
+                    setSquareMeter(String(r.data.area));
+                    setToiletCount(String(r.data.bathroom));
+                    if (r.data.cleaning_type === "Регулярная уборка") {
+                        setRegularState(true);
+                        setGeneralState(false);
+                        setAfterBuildState(false);
+                    } else if (r.data.cleaning_type === "Генеральная уборка") {
+                        setRegularState(false);
+                        setGeneralState(true);
+                        setAfterBuildState(false);
+                    } else {
+                        setRegularState(false);
+                        setGeneralState(false);
+                        setAfterBuildState(true);
+                    }
+                    if (r.data.premises_type === "Квартира") {
+                        setHotelState(true);
+                        setOfficeState(false);
+                        setHomeState(false);
+                        setCafeState(false);
+                    } else if (r.data.premises_type === "Офис") {
+                        setHotelState(false);
+                        setOfficeState(true);
+                        setHomeState(false);
+                        setCafeState(false);
+                    } else if (r.data.premises_type === "Загородный дом") {
+                        setHotelState(false);
+                        setOfficeState(false);
+                        setHomeState(true);
+                        setCafeState(false);
+                    } else {
+                        setHotelState(false);
+                        setOfficeState(false);
+                        setHomeState(false);
+                        setCafeState(true);
+                    }
+                    setComment(r.data.comment);
+                    setRegion(r.data.coordinates);
+                    setDoorCount(String(r.data.door));
+                    setFlat(r.data.flat_or_office == 0 ? "" : r.data.flat_or_office);
+                    setMileageMkad(r.data.mkad == 0 ? "" : String(r.data.mkad));
+                    setWindowCount(String(r.data.window));
+                    setDateValue("Дата");
+                    setTimeValue("Время");
+                    setIsPending(false);
+                }
+            }).catch(err => {
+                console.log(err);
+                commonError();
+            })
+        } else if (state.isNeedDelete) {
+            getInitialState()
+            setErrorField(false);
+            setRegularState(true);
+            setGeneralState(false);
+            setAfterBuildState(false);
+            setHotelState(true);
+            setOfficeState(false);
+            setHomeState(false);
+            setCafeState(false);
+            setComment("");
+            setDoorCount("");
+            setFlat("");
+            setMileageMkad("");
+            setWindowCount("");
+            setSquareMeter("");
+            setToiletCount("");
+            setDateValue("Дата");
+            setTimeValue("Время");
+        }
+    }, [state])
+    useEffect(() => {
+        let object = {};
+        object.typeClean = regularState ? prices.regular
+            : generalState ? prices.general : afterBuildState ? prices.afterBuild : null;
+        object.typeBuilding = hotelState ? prices.flat
+            : officeState ? squareMeter === "0" || squareMeter === "" ? 0 : prices.office : homeState ? squareMeter === "0" || squareMeter === "" ? 0 : prices.home
+                : cafeState ? squareMeter === "0" || squareMeter === "" ? 0 : prices.cafe : null;
         object.priceSquare = object.typeClean + object.typeClean * object.typeBuilding;
-        object.square = squareMeter * object.priceSquare;
-        object.doors = doorCount * 500
-        object.windows = windowCount * 500
-        object.toilets = toiletCount * 600
-        console.warn(`squareMeter - ${squareMeter} ; priceSquare - ${object.priceSquare} ; square - ${object.square}`)
-        console.warn(object.square)
-        setCleanSum(object.typeClean * object.typeBuilding + object.square + object.doors + object.windows + object.toilets)
-    }, [type, square, squareMeter, doorCount, windowCount, toiletCount])
+        object.square = squareMeter !== "0" || squareMeter !== "" ? squareMeter * object.priceSquare : 0;
+        object.doors = doorCount * prices.door;
+        object.windows = windowCount * prices.window;
+        object.toilets = toiletCount * prices.toilet;
+        console.log(`squareMeter - ${squareMeter} ; priceSquare - ${object.priceSquare} ; square - ${object.square}`);
+        console.log(object.square);
+        setCleanSum(object.typeClean * object.typeBuilding + object.square + object.doors + object.windows + object.toilets);
+    }, [regularState, generalState, afterBuildState, hotelState, officeState, homeState, cafeState, square,
+        squareMeter, doorCount, windowCount, toiletCount]);
     useEffect(() => {
         setRoadSum(mileageMkad * 40)
     }, [mileageMkad])
     useEffect(() => {
-        setAllSum(cleanSum + roadSum)
-        setBonusSum(allSum  * bonusKoef)
-    }, [cleanSum, roadSum])
+        console.log(modal);
+    })
+    useEffect(() => {
+        setCleanSum(Math.round(cleanSum));
+        setAllSum(Math.round(cleanSum + roadSum));
+        setBonusSum(Math.round(allSum * bonusKoef));
+    }, [cleanSum, roadSum, allSum])
     const updateType = (data) => {
         setType(data);
-        console.warn(type);
+        console.log(type);
     }
     const updateSquare = (data) => {
         setSquare(data);
-        console.warn(square);
+        console.log(square);
     }
-    const renderItem = (item) => (
-        <View>
-            <Text>{item.heading}</Text>
-        </View>
-    );
+    const type1 = [
+        {id: 1, icon: clock, text: "Регулярная уборка", background: regular, borderColor: Colors.green, state: regularState, setState: setRegularState},
+        {id: 2, icon: star, text: "Генеральная уборка", background: general, borderColor: Colors.blue, state: generalState, setState: setGeneralState},
+        {id: 3, icon: stack, text: "После ремонта", background: afterBuild, borderColor: Colors.orange, state: afterBuildState, setState: setAfterBuildState}
+    ];
+    const type2 = [
+        {id: 1, icon: hotel, text: "Квартира", background: hotelBackground, borderColor: Colors.green, state: hotelState, setState: setHotelState},
+        {id: 2, icon: office, text: "Офис", background: officeBackground, borderColor: Colors.blue, state: officeState, setState: setOfficeState},
+        {id: 3, icon: home, text: "Загородный дом", background: homeBackground, borderColor: Colors.orange, state: homeState, setState: setHomeState},
+        {id: 4, icon: coffee, text: "Кафе или ресторан", background: cafeBackground, borderColor: Colors.red, state: cafeState, setState: setCafeState}
+    ]
+    const openPayment = (combinedRef, token) => {
+        navigation.navigate("Платеж", {combinedRef, token})
+    }
+    const openModal = () => {
+        if (squareMeter === "") {
+            setErrorField(true);
+            errorFetchCalculator();
+        } else {
+            if (timeValue === "Время" || dateValue === "Дата") {
+                errorChooseDateOrTime()
+            } else {
+                const object = {};
+                object.typeClean = regularState ? "Регулярная уборка" : generalState ? "Генеральная уборка" : "После ремонта";
+                object.typeBuilding = hotelState ? "Квартира" : officeState ? "Офис" : homeState ? "Загородный дом" : "Общепит";
+                object.square = Number(squareMeter);
+                object.doors = doorCount === "" ? 0 : Number(doorCount);
+                object.windows = windowCount === "" ? 0 : Number(windowCount);
+                object.toilets = toiletCount === "" ? 0 : Number(toiletCount);
+                object.address = address;
+                object.flatNumber = Number(flat);
+                object.mkad = Number(mileageMkad) ?? 0;
+                object.comment = comment;
+                object.date = dateValue;
+                object.time = timeValue;
+                object.region = {...region};
+                setInfo(object);
+                modal.open()
+                setScroll(false);
+            }
+        }
+    }
     return (
         isPending ? <Preloader/> :
-        <FlatList keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} data={["1"]}
-                  renderItem={({item}) => (
-                      <SafeAreaView style={styles.container}>
-                          <Text style={styles.text}>Тип уборки</Text>
-                          <ModalPicker callback={updateType} options={["Регулярная уборка", "Генеральная уборка", "Уборка после ремонта"]}/>
-                          <Text style={[styles.text, {marginTop: width * 0.09}]}>Тип помещения</Text>
-                          <ModalPicker callback={updateSquare} options={["Квартира", "Офис", "Загородный дом", "Кафе или ресторан"]}/>
-                          <Text style={[styles.text, {marginTop: width * 0.09}]}>Площадь помещения</Text>
-                          <View style={styles.input}>
-                              <TextInput value={squareMeter} onChangeText={setSquareMeter} placeholder="12" style={styles.inputField} keyboardType="numeric"/>
-                              <View style={styles.textContainer}>
-                                  <Text style={styles.text}>м</Text>
-                                  <Text style={styles.sup}>2</Text>
-                              </View>
-                          </View>
-                          <View style={styles.objects}>
-                              <View>
-                                  <Text style={[styles.text, {
-                                      marginTop: width * 0.09,
-                                      marginLeft: width * 0.015
-                                  }]}>Дверей</Text>
-                                  <View style={styles.input}>
-                                      <TextInput value={doorCount} onChangeText={setDoorCount} placeholder="2" style={styles.inputField} keyboardType="numeric"/>
+            <FlatList ref={mainFlatList} scrollEnabled={isScroll} style={{flex: 1, backgroundColor: "white"}} keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false} data={["1"]}
+                      renderItem={({item}) => (
+                          <Host>
+                              <Portal>
+                                  <PaymentModal openPayment={openPayment} navigation={navigation} info={info} bonusSize={bonusSize} allSum={allSum}
+                                                bonusSum={bonusSum} setScroll={setScroll} setModalOpen={setModalOpen} ref={el => (modal = el)} />
+                              </Portal>
+                              <SafeAreaView style={styles.container}>
+                                  <Text style={[styles.text, {marginHorizontal: width * 0.07}]}>Тип уборки</Text>
+                                  <View style={{flexDirection: "row", alignItems: "center", marginTop: 20, zIndex: 3}}>
+                                      <FlatList keyboardShouldPersistTaps='handled' ref={cleanFlatList} keyExtractor={item => String(item.id)} showsHorizontalScrollIndicator={false}
+                                                horizontal={true} data={type1} renderItem={({item}) => (
+                                          <View>
+                                              <View style={{padding: 2, borderRadius: 21, borderWidth: item.state ? 1 : 0,
+                                                  borderColor: item.borderColor, marginLeft: 23, marginRight: item.id === 3 ? 23 : 0}}>
+                                                  <TouchableOpacity style={{width: 230, height: 130, borderRadius: 18}} onPress={() => {
+                                                      setRegularState(false);
+                                                      setGeneralState(false);
+                                                      setAfterBuildState(false);
+                                                      item.setState(true);
+                                                  }}>
+                                                      <ImageBackground source={item.background} style={{width: 230, height: 130, borderRadius: 18,
+                                                          paddingLeft: 9, paddingRight: 14}}>
+                                                          <View>
+                                                              <View style={{flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+                                                                  marginTop: 12}}>
+                                                                  <Image source={item.icon} style={{width: 24, height: 24}}/>
+                                                                  {item.state ? <Image source={radio} style={{width: 24, height: 24}}/> : null}
+                                                              </View>
+                                                              <Text style={styles.textType}>{item.text}</Text>
+                                                              <Image source={plus} style={{width: 15, height: 13, marginTop: 30}}/>
+                                                          </View>
+                                                      </ImageBackground>
+                                                  </TouchableOpacity>
+                                              </View>
+                                          </View>
+                                      )}/>
                                   </View>
-                              </View>
-                              <View style={styles.objectItem}>
-                                  <Text style={[styles.text, {
-                                      marginTop: width * 0.09,
-                                      marginLeft: width * 0.015
-                                  }]}>Окон</Text>
-                                  <View style={styles.input}>
-                                      <TextInput value={windowCount} onChangeText={setWindowCount} placeholder="2" style={styles.inputField} keyboardType="numeric"/>
+                                  <Text style={[styles.text, {marginTop: width * 0.09, marginHorizontal: width * 0.07,}]}>Тип помещения</Text>
+                                  <View style={{flexDirection: "row", alignItems: "center", marginTop: 20}}>
+                                      <FlatList keyboardShouldPersistTaps='handled' ref={buildFlatList} keyExtractor={item => String(item.id)} showsHorizontalScrollIndicator={false}
+                                                horizontal={true} data={type2} renderItem={({item}) => (
+                                          <View>
+                                              <View style={{padding: 2, borderRadius: 23, borderWidth: item.state ? 1 : 0, borderColor: item.borderColor,
+                                                  marginLeft: 20, marginRight: item.id === 4 ? 23 : 0}}>
+                                                  <TouchableOpacity style={{width: 130, height: 130}} onPress={() => {
+                                                      setHotelState(false);
+                                                      setOfficeState(false);
+                                                      setHomeState(false);
+                                                      setCafeState(false);
+                                                      item.setState(true);
+                                                  }}>
+                                                      <ImageBackground source={item.background} style={{width: 130, height: 130, paddingLeft: 14,
+                                                          paddingRight: 14}}>
+                                                          <View>
+                                                              <View style={{flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+                                                                  marginTop: 12}}>
+                                                                  <Image source={item.icon} style={{width: 24, height: 24}}/>
+                                                                  {item.state ? <Image source={radio} style={{width: 24, height: 24}}/> : null}
+                                                              </View>
+                                                              <Text style={styles.textType}>{item.text}</Text>
+                                                              <Image source={plus} style={{width: 15, height: 13, marginTop: item.id >= 3 ? 10 : 30}}/>
+                                                          </View>
+                                                      </ImageBackground>
+                                                  </TouchableOpacity>
+                                              </View>
+                                          </View>
+                                      )}/>
                                   </View>
-                              </View>
-                              <View style={styles.objectItem}>
-                                  <Text style={[styles.text, {marginTop: width * 0.09, alignSelf: "center"}]}>Сан
-                                      узлов</Text>
-                                  <View style={styles.input}>
-                                      <TextInput value={toiletCount} onChangeText={setToiletCount} placeholder="2" style={styles.inputField} keyboardType="numeric"/>
+                                  <Text style={[styles.text, {marginTop: width * 0.09, marginHorizontal: width * 0.07}]}>Площадь помещения</Text>
+                                  <View style={[styles.input, {marginHorizontal: width * 0.07, borderWidth: isErrorField && squareMeter === "" ? 2 : 0,
+                                      borderColor: "red"}]}>
+                                      <TextInput value={squareMeter} onChangeText={setSquareMeter} placeholder="0" placeholderTextColor={Colors.violet}
+                                                 style={styles.inputField} keyboardType="numeric"/>
+                                      <View style={styles.textContainer}>
+                                          <Text style={[styles.text, {color: Colors.violet}]}>м</Text>
+                                          <Text style={styles.sup}>2</Text>
+                                      </View>
                                   </View>
-                              </View>
-                          </View>
-                          <Text style={[styles.text, {marginTop: width * 0.09}]}>Адрес помещения</Text>
-                          <MyInput placeholder={"Город, улица, дом"} value={address} onFocus={() => navigation.navigate("Карта", {updateAddress, region })}/>
-                          <View style={styles.inputRow}>
-                              <MyInput placeholder={"Квартира, офис"} width={width * 0.4} keyboardType={"numeric"}/>
-                              <View style={styles.paddingView}/>
-                              <MyInput value={mileageMkad} onChangeText={setMileageMkad} placeholder={"Км от МКАД"} width={width * 0.4} keyboardType={"numeric"}/>
-                          </View>
-                          <MyInput placeholder={"Этаж, особенности прохода, комментарии"} multiline={true} height={width * 0.3}/>
-                          <View pointerEvents="none" style={styles.mapContainer}>
-                              <MapView style={styles.map} scrollEnabled={false} region={region} ref={mapRef}>
-                                  <Marker coordinate={region}>
-                                      <MarkerCustom/>
-                                  </Marker>
-                              </MapView>
-                          </View>
-                          <Text style={[styles.text, {marginTop: width * 0.09}]}>Дата и время уборки</Text>
-                          <View style={styles.dateTime}>
-                              <View style={[styles.input, {width: width * 0.4, justifyContent: "space-between"}]}>
-                                  <Text>{dateValue}</Text>
-                                  <TouchableOpacity onPress={showDatePicker}>
-                                      <Svg xmlns="http://www.w3.org/2000/svg" height={width * 0.08} width={width * 0.08}
-                                           viewBox="0 0 512 512">
-                                          <Defs/>
-                                          <Path fill="#313130"
-                                                d="M452 40h-24V0h-40v40H124V0H84v40H60C26.916 40 0 66.916 0 100v352c0 33.084 26.916 60 60 60h392c33.084 0 60-26.916 60-60V100c0-33.084-26.916-60-60-60zm20 412c0 11.028-8.972 20-20 20H60c-11.028 0-20-8.972-20-20V188h432v264zm0-304H40v-48c0-11.028 8.972-20 20-20h24v40h40V80h264v40h40V80h24c11.028 0 20 8.972 20 20v48z"/>
-                                          <Path fill="#313130"
-                                                d="M76 230h40v40H76zM156 230h40v40h-40zM236 230h40v40h-40zM316 230h40v40h-40zM396 230h40v40h-40zM76 310h40v40H76zM156 310h40v40h-40zM236 310h40v40h-40zM316 310h40v40h-40zM76 390h40v40H76zM156 390h40v40h-40zM236 390h40v40h-40zM316 390h40v40h-40zM396 310h40v40h-40z"/>
-                                      </Svg>
-                                  </TouchableOpacity>
-                                  <DateTimePickerModal
-                                      isVisible={isDatePickerVisible}
-                                      mode="date"
-                                      onConfirm={handleConfirmDate}
-                                      onCancel={hideDatePicker}
-                                  />
-                              </View>
-                              <View style={[styles.input, {
-                                  width: width * 0.4,
-                                  justifyContent: "space-between",
-                                  marginLeft: width * 0.05
-                              }]}>
-                                  <Text>{timeValue}</Text>
-                                  <TouchableOpacity onPress={showTimePicker}>
-                                      <Svg xmlns="http://www.w3.org/2000/svg" height={width * 0.08} width={width * 0.08}
-                                           viewBox="0 0 512 512">
-                                          <Defs/>
-                                          <Path fill="#313130"
-                                                d="M347.216 301.211l-71.387-53.54V138.609c0-10.966-8.864-19.83-19.83-19.83-10.966 0-19.83 8.864-19.83 19.83v118.978c0 6.246 2.935 12.136 7.932 15.864l79.318 59.489a19.713 19.713 0 0011.878 3.966c6.048 0 11.997-2.717 15.884-7.952 6.585-8.746 4.8-21.179-3.965-27.743z"/>
-                                          <Path fill="#313130"
-                                                d="M256 0C114.833 0 0 114.833 0 256s114.833 256 256 256 256-114.833 256-256S397.167 0 256 0zm0 472.341c-119.275 0-216.341-97.066-216.341-216.341S136.725 39.659 256 39.659c119.295 0 216.341 97.066 216.341 216.341S375.275 472.341 256 472.341z"/>
-                                      </Svg>
-                                  </TouchableOpacity>
-                                  <DateTimePickerModal
-                                      isVisible={isTimePickerVisible}
-                                      mode="time"
-                                      onConfirm={handleConfirmTime}
-                                      onCancel={hideTimePicker}
-                                  />
-                              </View>
-                          </View>
-                          <Text style={[styles.calcText, {fontSize: width * 0.06, marginTop: width * 0.04}]}>Итого: {allSum} руб.</Text>
-                          <Text style={styles.calcText}>Стоимость уборки: {cleanSum} руб.</Text>
-                          <Text style={styles.calcText}>Стоимость дороги: {roadSum} руб.</Text>
-                          <Text style={styles.calcText}>Бонусных рублей начислим: {bonusSum} руб.</Text>
-                          <View style={{marginTop: width * 0.04}}>
-                              <MyButton title="Заказать уборку" onPress={setModalVisible} width={width * 0.85}/>
-                              <Modal isVisible={isModalVisible}>
-                                  <View style={{flex: 1}}>
-                                      <WebView source={{ html: '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n' +
-                                              '<html>\n' +
-                                              ' <head>\n' +
-                                              '  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">\n' +
-                                              '  <title>Прием платежа с помощью виджета ЮKassa</title>\n' +
-                                              '\n' +
-                                              '  <!--Подключение библиотеки для инициализации виджета ЮKassa-->\n' +
-                                              '  <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>\n' +
-                                              ' </head>\n' +
-                                              ' <body>\n' +
-                                              '  <p>Ниже отобразится платежная форма. Если вы еще не создавали платеж и не передавали токен для инициализации виджета, появится сообщение об ошибке.</p>\n' +
-                                              '\n' +
-                                              '  <!--Контейнер, в котором будет отображаться платежная форма-->\n' +
-                                              '  <div id="payment-form"></div>\n' +
-                                              '\n' +
-                                              '  <p>Данные банковской карты для оплаты в <b>тестовом магазине</b>:</p>\n' +
-                                              '  <ul>\n' +
-                                              '   <li>номер — <b>5555 5555 5555 4477</b></li>\n' +
-                                              '   <li>срок действия — <b>01/30</b> (или другая дата, больше текущей)</li>\n' +
-                                              '   <li>CVC — <b>123</b> (или три любые цифры)</li>\n' +
-                                              '   <li>код для прохождения 3-D Secure — <b>123</b> (или три любые цифры)</li>\n' +
-                                              '  </ul>\n' +
-                                              '  <p><a href=https://yookassa.ru/developers/using-api/testing#test-bank-card>Другие тестовые банковские карты</a></p>\n' +
-                                              '\n' +
-                                              '  <script>\n' +
-                                              '  //Инициализация виджета. Все параметры обязательные.\n' +
-                                              '  const checkout = new window.YooMoneyCheckoutWidget({\n' +
-                                              '      confirmation_token: \'ct-28a1fb1b-000f-5000-a000-14386a42388b\', //Токен, который перед проведением оплаты нужно получить от ЮKassa\n' +
-                                              '      return_url: \'https://example.com/\', //Ссылка на страницу завершения оплаты, это может быть любая ваша страница\n' +
-                                              '\n' +
-                                              '      //При необходимости можно изменить цвета виджета, подробные настройки см. в документации\n' +
-                                              '       //customization: {\n' +
-                                              '        //Настройка цветовой схемы, минимум один параметр, значения цветов в HEX\n' +
-                                              '        //colors: {\n' +
-                                              '            //Цвет акцентных элементов: кнопка Заплатить, выбранные переключатели, опции и текстовые поля\n' +
-                                              '            //controlPrimary: \'#00BF96\', //Значение цвета в HEX\n' +
-                                              '\n' +
-                                              '            //Цвет платежной формы и ее элементов\n' +
-                                              '            //background: \'#F2F3F5\' //Значение цвета в HEX\n' +
-                                              '        //}\n' +
-                                              '      //},\n' +
-                                              '      error_callback: function(error) {\n' +
-                                              '          console.log(error)\n' +
-                                              '      }\n' +
-                                              '  });\n' +
-                                              '\n' +
-                                              '  //Отображение платежной формы в контейнере\n' +
-                                              '  checkout.render(\'payment-form\');\n' +
-                                              '  </script>\n' +
-                                              ' </body>\n' +
-                                              '</html>'}}/>
+                                  <View style={[styles.objects, {marginHorizontal: width * 0.07}]}>
+                                      <View>
+                                          <Text style={[styles.text, {
+                                              marginTop: width * 0.09,
+                                              marginLeft: width * 0.015
+                                          }]}>Дверей</Text>
+                                          <View style={[styles.input]}>
+                                              <TextInput value={doorCount} onChangeText={setDoorCount} placeholder="0"
+                                                         style={styles.inputField} keyboardType="numeric" placeholderTextColor={Colors.violet}/>
+                                          </View>
+                                      </View>
+                                      <View style={styles.objectItem}>
+                                          <Text style={[styles.text, {
+                                              marginTop: width * 0.09,
+                                              marginLeft: width * 0.015
+                                          }]}>Окон</Text>
+                                          <View style={[styles.input]}>
+                                              <TextInput value={windowCount} onChangeText={setWindowCount} placeholder="0"
+                                                         style={styles.inputField} keyboardType="numeric" placeholderTextColor={Colors.violet}/>
+                                          </View>
+                                      </View>
+                                      <View style={styles.objectItem}>
+                                          <Text style={[styles.text, {marginTop: width * 0.09, alignSelf: "center"}]}>Сан
+                                              узлов</Text>
+                                          <View style={[styles.input]}>
+                                              <TextInput value={toiletCount} onChangeText={setToiletCount} placeholder="0"
+                                                         style={styles.inputField} keyboardType="numeric" placeholderTextColor={Colors.violet}/>
+                                          </View>
+                                      </View>
                                   </View>
-                              </Modal>
-                          </View>
-                      </SafeAreaView>
-                  )}/>
+                                  <Text style={[styles.text, {marginTop: width * 0.09, marginHorizontal: width * 0.07}]}>Адрес помещения</Text>
+                                  <View style={{marginHorizontal: width * 0.07}}>
+                                      <MyInput placeholder={"Город, улица, дом"} value={address}
+                                               onFocus={() => navigation.navigate("Карта", {updateAddress, region, initialRegion})}/>
+                                      <View style={styles.inputRow}>
+                                          <MyInput placeholder={"Квартира/Оф."} value={flat} onChangeText={setFlat} width={width * 0.4} marginTop={30}
+                                                   keyboardType={"numeric"}/>
+                                          <View style={styles.paddingView}/>
+                                          <MyInput value={mileageMkad} onChangeText={setMileageMkad} marginTop={30} placeholder={"Км от МКАД"}
+                                                   width={width * 0.4} keyboardType={"numeric"}/>
+                                      </View>
+                                      <MyInput marginTop={30} value={comment} onChangeText={setComment} placeholder={"Этаж, особенности прохода, комментарии"}
+                                               multiline={true}
+                                               height={96}/>
+                                      <View pointerEvents="none" style={styles.mapContainer}>
+                                          <MapView style={styles.map} scrollEnabled={false} region={region} ref={mapRef}>
+                                              <Marker coordinate={region}>
+                                                  <MarkerCustom/>
+                                              </Marker>
+                                          </MapView>
+                                      </View>
+                                      <Text style={[styles.text, {marginTop: width * 0.09}]}>Дата и время уборки</Text>
+                                      <View style={styles.dateTime}>
+                                          <TouchableOpacity onPress={showDatePicker} style={[styles.input, {width: width * 0.4,
+                                              justifyContent: "space-between", paddingLeft: 24}]}>
+                                              <Text style={{color: dateValue === "Дата" ? Colors.violet : Colors.black, fontSize: 15}}>
+                                                  {dateValue === "Дата" ? dateValue : dateString}</Text>
+                                                  <Image source={calendar} style={{width: 20, height: 20}}/>
+                                              <DateTimePickerModal
+                                                  isVisible={isDatePickerVisible}
+                                                  cancelTextIOS={"Отмена"}
+                                                  isDarkModeEnabled={colorPicker === "dark"}
+                                                  confirmTextIOS={"Подтвердить"}
+                                                  locale="ru_RU"
+                                                  minimumDate={new Date()}
+                                                  display={Platform.OS === "ios" ? "inline" : "default"}
+                                                  headerTextIOS={"Выберите дату"}
+                                                  mode="date"
+                                                  onConfirm={handleConfirmDate}
+                                                  onCancel={hideDatePicker}
+                                              />
+                                          </TouchableOpacity>
+                                          <TouchableOpacity onPress={showTimePicker} style={[styles.input, {
+                                              width: width * 0.4,
+                                              justifyContent: "space-between",
+                                              paddingLeft: 24
+                                          }]}>
+                                              <Text style={{color: timeValue === "Время" ? Colors.violet : Colors.black, fontSize: 15}}>{timeValue}</Text>
+                                                  <Image source={time} style={{width: 20, height: 20}}/>
+                                              <DateTimePickerModal
+                                                  isVisible={isTimePickerVisible}
+                                                  cancelTextIOS={"Отмена"}
+                                                  isDarkModeEnabled={colorPicker === "dark"}
+                                                  confirmTextIOS={"Подтвердить"}
+                                                  mode="time"
+                                                  onConfirm={handleConfirmTime}
+                                                  onCancel={hideTimePicker}
+                                              />
+                                          </TouchableOpacity>
+                                      </View>
+                                      <Text style={[styles.calcText, {fontSize: 20, fontWeight: "500", marginTop: 30, color: Colors.black}]}>
+                                          Итого: {allSum} руб.</Text>
+                                      <Text style={styles.calcText}>Стоимость уборки: {cleanSum} руб.</Text>
+                                      <Text style={styles.calcText}>Стоимость дороги: {roadSum} руб.</Text>
+                                      <Text style={styles.calcText}>Бонусных рублей начислим: {bonusSum} руб.</Text>
+                                      <View style={{marginTop: width * 0.04}}>
+                                          <MyButton title="Заказать уборку" onPress={openModal} width={width * 0.85}/>
+                                      </View>
+                                  </View>
+                              </SafeAreaView>
+                          </Host>
+                      )}/>
     )
 }
 
@@ -374,26 +616,26 @@ const styles = StyleSheet.create({
     container: {
         alignItems: "flex-start",
         marginVertical: width * 0.1,
-        paddingHorizontal: width * 0.07
+        backgroundColor: "white",
+        zIndex: 2
     },
     inputField: {
-        width: width * 0.09
+        width: width * 0.09,
+        fontSize: 15
     },
     input: {
         width: width * 0.25,
         height: width * 0.13,
-        borderWidth: 2,
-        borderColor: "#2eade8",
         borderRadius: 15,
-        marginTop: width * 0.02,
-        color: "#2eade8",
+        marginTop: 15,
+        color: Colors.blue,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "Montserrat_500Medium",
-        paddingHorizontal: width * 0.03,
-        fontSize: width * 0.03,
-        backgroundColor: "#fff"
+        fontWeight: "500",
+        paddingHorizontal: 24,
+        fontSize: 15,
+        backgroundColor: Colors.lightGray
     },
     textContainer: {
         flexDirection: "row",
@@ -401,8 +643,20 @@ const styles = StyleSheet.create({
     },
     text: {
         alignSelf: "flex-start",
-        fontSize: width * 0.043,
-        fontFamily: "Montserrat_400Regular"
+        fontSize: width * 0.05,
+        color: Colors.black,
+        fontWeight: "500",
+    },
+    sup: {
+        alignSelf: "flex-start",
+        fontSize: width * 0.03,
+        color: Colors.violet,
+        fontWeight: "500",
+    },
+    textType: {
+        color: "white",
+        fontSize: 15,
+        marginTop: 11
     },
     paddingView: {
         paddingHorizontal: width * 0.024
@@ -422,8 +676,6 @@ const styles = StyleSheet.create({
         marginTop: width * 0.1,
         width: width * 0.85,
         height: width * 0.5,
-        borderWidth: 2,
-        borderColor: "#2eade8",
         borderRadius: 15,
         zIndex: 5,
         overflow: "hidden"
@@ -439,8 +691,14 @@ const styles = StyleSheet.create({
         marginTop: width * 0.03
     },
     calcText: {
-        fontFamily: "Montserrat_500Medium",
-        fontSize: width * 0.04
+        fontWeight: "400",
+        color: Colors.violet,
+        fontSize: 15,
+        marginTop: 5
+    },
+    modal: {
+        justifyContent: 'flex-end',
+        margin: 0,
     }
 })
 
