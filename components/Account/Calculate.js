@@ -46,6 +46,20 @@ import {setTokenRequest} from "../utils/Common Functions";
 import {AuthContext} from "../../App";
 import PaymentScreen from "./PaymentScreen";
 import {Ionicons} from "@expo/vector-icons";
+import {OfferModal} from "../modals/OfferModal";
+import {ConfidencialModal} from "../modals/ConfidencialModal";
+import ChoosePhotoModal from "../modals/ChoosePhotoModal";
+import Modal, {
+    ModalTitle,
+    ModalContent,
+    ModalFooter,
+    ModalButton,
+    SlideAnimation,
+    ScaleAnimation,
+    BottomModal,
+    ModalPortal,
+} from 'react-native-modals';
+import AdditionalPrices from "./AdditionalPrices";
 
 const width = Dimensions.get("screen").width;
 
@@ -107,6 +121,27 @@ const CalculateRoot = ({navigation}) => {
                             </LinearGradient>
                         )
                     }} component={MyMapView}/>
+                    <Stack.Screen name="Дополнительные услуги" options={{
+                        headerShown: true,
+                        headerStyle: {
+                            height: width * 0.27
+                        },
+                        headerTitleAlign: "center",
+                        headerLeft: () => null,
+                        headerTitleStyle: {
+                            fontWeight: "500",
+                            justifyContent: "center",
+                            alignSelf: "center",
+                            color: "white",
+                            fontSize: 24
+                        },
+                        headerBackground: () => (
+                            <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
+                                            end={[1, 0]}
+                                            style={[StyleSheet.absoluteFill]}>
+                            </LinearGradient>
+                        )
+                    }} component={AdditionalPrices}/>
                 </Stack.Navigator>
             </Host>
         );
@@ -116,8 +151,10 @@ const CalculateRoot = ({navigation}) => {
 const Calculate = ({navigation, route}) => {
     const [ state, dispatch ] = useContext(AuthContext);
     let modal = useRef(null).current;
+    let modalPrices = useRef(null).current;
 
     const [isModalOpen, setModalOpen] = useState(false);
+    const [isModalPrices, setModalPrices] = useState(false);
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
 
@@ -165,6 +202,8 @@ const Calculate = ({navigation, route}) => {
     const [cleanSum, setCleanSum] = useState(0);
     const [roadSum, setRoadSum] = useState(0);
     const [bonusSum, setBonusSum] = useState(0);
+
+    const [image, setImage] = useState(null);
 
     const [dateValue, setDateValue] = useState("Дата");
     const [dateString, setDateString] = useState(null);
@@ -239,18 +278,18 @@ const Calculate = ({navigation, route}) => {
                             console.log(`bonus size ${r.data.main_info.bonus_balance}`)
                             calculateAPI.getOptions().then(r => {
                                 let obj = {...prices};
-                                obj.regular = r.data.type_regular;
-                                obj.general = r.data.type_general;
-                                obj.afterBuild = r.data.type_after_repair;
-                                obj.flat = r.data.type_building_flat;
-                                obj.office = r.data.type_building_office;
-                                obj.house = r.data.type_building_house;
-                                obj.cafe = r.data.type_building_cafe;
-                                obj.square = r.data.area;
-                                obj.door = r.data.door;
-                                obj.window = r.data.window;
-                                obj.toilet = r.data.bathroom;
-                                obj.mkad = r.data.mkad;
+                                obj.regular = r.data.options.type_regular;
+                                obj.general = r.data.options.type_general;
+                                obj.afterBuild = r.data.options.type_after_repair;
+                                obj.flat = r.data.options.type_building_flat;
+                                obj.office = r.data.options.type_building_office;
+                                obj.house = r.data.options.type_building_house;
+                                obj.cafe = r.data.options.type_building_cafe;
+                                obj.square = r.data.options.area;
+                                obj.door = r.data.options.door;
+                                obj.window = r.data.options.window;
+                                obj.toilet = r.data.options.bathroom;
+                                obj.mkad = r.data.options.mkad;
                                 setPrices(obj);
                                 console.log(obj);
                                 setColorPicker(Appearance.getColorScheme());
@@ -537,6 +576,7 @@ const Calculate = ({navigation, route}) => {
                                           </View>
                                       </View>
                                   </View>
+                                  <MyButton title="Дополнительные услуги" onPress={() => navigation.navigate("Дополнительные услуги")} marginTop={width * 0.09} width={width * 0.85}/>
                                   <Text style={[styles.text, {marginTop: width * 0.09, marginHorizontal: width * 0.07}]}>Адрес помещения</Text>
                                   <View style={{marginHorizontal: width * 0.07}}>
                                       <MyInput placeholder={"Город, улица, дом"} value={address}

@@ -29,14 +29,16 @@ const width = Dimensions.get("screen").width;
 const height = Dimensions.get("screen").height;
 
 const Login = ({navigation}) => {
+    const [state, dispatch] = useContext(AuthContext)
     let modalOffer = useRef(null).current;
     let modalConfidencial = useRef(null).current;
     const [agree1, setAgree1] = useState(true);
     const [agree2, setAgree2] = useState(true);
+    const [counter, setCounter] = useState(0);
 
     const [input, setInput] = useState("");
     const [phoneField, setPhoneField] = useState("");
-    const [isPending, setIsPending] = useState(true);
+    const [isPending, setIsPending] = useState(false);
 
     const [keyboardStatus, setKeyboardStatus] = useState(undefined);
     const _keyboardDidShow = () => setKeyboardStatus("Keyboard Shown");
@@ -52,11 +54,20 @@ const Login = ({navigation}) => {
             Keyboard.removeListener("keyboardDidHide", _keyboardDidHide);
         };
     }, [])
+    const subtractionCode = value => {
+        setTimeout(() => {
+            dispatch({type: "SET_TIME_CODE_VALUE", timeCode: --value});
+        }, 1000)
+    }
     const onSubmit = () => {
+        setIsPending(true);
         authAPI.login(phoneField.getRawValue()).then(r => {
             if (r === undefined) {
                 errorLogin();
             } else {
+                dispatch({type: "SET_TIME_CODE_VALUE", timeCode: 30});
+                dispatch({type: "SET_TIME_CODE", isTime: true});
+                setCounter(30);
                 console.log(r);
                 navigation.navigate("Code", {phone: phoneField.getRawValue()});
             }
@@ -66,7 +77,21 @@ const Login = ({navigation}) => {
         })
     }
 
-    const disabled = !agree1 || !agree2 || input.length < 18;
+    useEffect(() => {
+        if (state.isTime) {
+            if (state.timeCode > 0) {
+                !isPending ? setIsPending(true) : null;
+                subtractionCode(state.timeCode);
+            } else if (state.timeCode <= 0) {
+                dispatch({type: "SET_TIME_CODE", isTime: false});
+            }
+        }
+        if (!state.isTime) {
+            isPending ? setIsPending(false) : null;
+        }
+
+    }, [state])
+    const disabled = !agree1 || !agree2 || input.length < 18 || isPending;
     let [fontsLoaded] = useFonts({
         Montserrat_400Regular, Montserrat_500Medium
     });
@@ -75,8 +100,8 @@ const Login = ({navigation}) => {
     } else {
         return (
             <Host>
-                <View style={{flex: 1}}>
-                    <FlatList scrollEnabled={false} keyboardShouldPersistTaps='handled' data={["1"]} contentContainerStyle={{flex: 1, backgroundColor: "white"}} renderItem={({item}) => (
+                <View>
+                    <FlatList scrollEnabled={false}  keyboardShouldPersistTaps='handled' data={["1"]} renderItem={({item}) => (
                         <View style={keyboardStatus === "Keyboard Shown" ? [styles.container, {justifyContent: "flex-start"}] : styles.container}>
                             <Portal>
                                 <OfferModal ref={el => (modalOffer = el)}/>
@@ -104,7 +129,7 @@ const Login = ({navigation}) => {
                                     placeholderTextColor={"#6E7191"}
                                 />
                             </View>
-                            <MyButton title={"Вход"} onPress={onSubmit} disabled={disabled}/>
+                            <MyButton title={state.isTime ? `Доступно через ${state.timeCode}` : "Вход"} onPress={onSubmit} disabled={disabled}/>
                             <View style={styles.checkboxes}>
                                 <View>
                                     <View style={styles.checkboxItem}>
@@ -124,6 +149,7 @@ const Login = ({navigation}) => {
                                             {agree2 ? <Image source={checkedCheckbox} style={styles.checkboxImg}/> :
                                                 <Image source={uncheckedCheckbox} style={styles.checkboxImg}/>}
                                         </TouchableOpacity>
+
                                         <View style={{
                                             flexDirection: "row",
                                             justifyContent: "center",
@@ -158,6 +184,7 @@ const Login = ({navigation}) => {
 };
 const styles = StyleSheet.create({
     container: {
+        height,
         alignItems: "center",
         backgroundColor: "#fff",
         paddingTop: height * 0.07,

@@ -96,14 +96,12 @@ export default function App({navigation}) {
                     return {
                         ...prevState,
                         isSignout: false,
-                        userToken: "dummy-auth-token",
                         isTime: action.isTime
                     }
                 case "SET_TIME_CODE_VALUE":
                     return {
                         ...prevState,
                         isSignout: false,
-                        userToken: "dummy-auth-token",
                         timeCode: action.timeCode
                     }
             }

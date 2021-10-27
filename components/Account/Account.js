@@ -99,6 +99,9 @@ const Account = () => {
             if (r === undefined) {
                 profileAlertError();
             } else {
+                let obj = {...info};
+                obj.company = chooseData === options[1] ? "Юридическое": "Физическое"
+                setInfo(obj);
                 profileAlertSuccess();
             }
         }).catch(err => {

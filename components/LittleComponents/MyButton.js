@@ -1,18 +1,20 @@
 import React, {useContext} from 'react';
-import {Dimensions, Text, TouchableOpacity, StyleSheet} from "react-native";
+import {Dimensions, Text, TouchableOpacity, StyleSheet, View} from "react-native";
 import {LinearGradient} from "expo-linear-gradient";
 
 const width = Dimensions.get("screen").width;
 
 const MyButton = (props) => {
     return (
-        <TouchableOpacity style={props.width ? [styles.button, {width: props.width}] : styles.button} disabled={props.disabled}
+        <TouchableOpacity style={props.width ? [styles.button, {width: props.width, marginTop: props.marginTop ? props.marginTop : width * 0.05}] : styles.button} disabled={props.disabled}
                           onPress={props.onPress}>
-            <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]}
-                            style={styles.gradientButton}
-                            end={[1, 0]}>
-                <Text style={styles.textButton}>{props.title}</Text>
-            </LinearGradient>
+            {props.disabled ?
+                <View style={[styles.gradientButton, {backgroundColor: "gray"}]}>
+                    <Text style={styles.textButton}>{props.title}</Text>
+                </View> :
+                <LinearGradient colors={["#3ad666", "#2eade8"]} start={[0, 1]} style={styles.gradientButton} end={[1, 0]}>
+                    <Text style={styles.textButton}>{props.title}</Text>
+                </LinearGradient>}
         </TouchableOpacity>
     );
 };

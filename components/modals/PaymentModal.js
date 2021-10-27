@@ -29,13 +29,14 @@ const PaymentModal = forwardRef((props, ref) => {
         setBonus(!isBonus);
     }
     const setWebView = type => {
-        let finalSum = isBonus ? props.bonusSize >= props.allSum ? props.allSum : props.allSum - props.bonusSize : props.allSum
-        let bonus = props.bonusSize >= props.allSum ? finalSum : props.bonusSize
+        let finalSum = isBonus ? props.bonusSize >= props.allSum ? 0 : props.allSum - props.bonusSize : props.allSum
+        let bonus = props.bonusSize >= props.allSum ? props.allSum : props.bonusSize
         console.log(props.bonusSize);
         setTokenRequest(calculateAPI.createPayment, {
             booking: {
                 date: props.info.date,
                 time: props.info.time,
+                paid: finalSum,
                 payment_tupe: type,
                 bonus_size: !isBonus ? 0 : bonus
             },
@@ -49,7 +50,7 @@ const PaymentModal = forwardRef((props, ref) => {
                 adress: props.info.address,
                 flat_or_office: props.info.flatNumber,
                 mkad: props.info.mkad,
-                price: finalSum,
+                price: props.allSum,
                 bonuce: props.bonusSum,
                 coordinates: props.info.region,
                 comment: props.info.comment
@@ -65,6 +66,7 @@ const PaymentModal = forwardRef((props, ref) => {
                             commonError();
                         } else {
                             successFree();
+                            console.warn(`allsum ${props.allSum}, bonus ${bonus}, finalsum ${finalSum}`)
                             await dispatch({type: "UNSET_DATA_CALCULATOR"});
                             await dispatch({type: "DELETE_INFO_FROM_CALCULATOR"});
                             combinedRef.current.close();

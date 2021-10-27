@@ -1,9 +1,12 @@
 {
   "expo": {
-    "name": "M-Cleaning",
-    "slug": "M-Cleaning",
-    "version": "1.1.0",
+    "name": "MMClean",
+    "slug": "MMClean",
+    "version": "1.2.1",
     "orientation": "portrait",
+    "locales": {
+      "ru": "./languages/russian.json"
+    },
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
@@ -17,8 +20,20 @@
       "**/*"
     ],
     "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "Для оказания услуг по уборке, MMClean получает доступ к вашим фото и камере. Это нужно для персонализации вашего профиля, службы поддержки.",
+        "NSCalendarsUsageDescription": "Разрешить приложению доступ к календарю",
+        "NSContactsUsageDescription": "Разрешить приложению доступ к контактам",
+        "NSLocationWhenInUseUsageDescription": "Для оказания услуг по уборке, MMClean собирает данные о местоположении с момента открытия приложения и до полного оказания услуг. Это даёт нам точно определять адрес убираемого помещения.",
+        "NSMicrophoneUsageDescription": "Разрешить приложению доступ к микрофону",
+        "NSMotionUsageDescription": "Разрешить приложению доступ к акселлерометру",
+        "NSPhotoLibraryAddUsageDescription": "Для оказания услуг по уборке, MMClean получает доступ к вашим фото и камере. Это нужно для персонализации вашего профиля, службы поддержки.",
+        "NSPhotoLibraryUsageDescription": "Для оказания услуг по уборке, MMClean получает доступ к вашим фото и камере. Это нужно для персонализации вашего профиля, службы поддержки.",
+        "NSRemindersUsageDescription": "Разрешить приложению доступ к вашим напоминаниям",
+        "CFBundleAllowMixedLocalizations": true
+      },
       "supportsTablet": true,
-      "bundleIdentifier": "com.yeazzy.CleaningApp",
+      "bundleIdentifier": "com.internetica.mmclean",
       "config": {
         "googleMapsApiKey": "AIzaSyB1LhEAWQxJrm2Vp5Dci-cvcFcYEFdOD_Y"
       }
@@ -34,7 +49,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.yeazzy.CleaningApp"
+      "package": "com.internetica.mmclean"
     },
     "web": {
       "favicon": "./assets/favicon.png"
